@@ -1,0 +1,1 @@
+"""Domain Layer - Business entities and core logic."""
