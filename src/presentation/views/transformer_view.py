@@ -1,27 +1,36 @@
 """
 View: TransformerView
+Halaman transformasi dan cleaning data dengan komponen modular.
 """
 
 import customtkinter as ctk
 
+from src.presentation.components.shared.page_header import PageHeader
+
 
 class TransformerView(ctk.CTkFrame):
-    """Data transformer view."""
-    
+    """View orchestrator untuk Data Transformer."""
+
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         self._setup_ui()
-    
+
     def _setup_ui(self):
-        title = ctk.CTkLabel(
-            self,
-            text="Data Transformer",
-            font=ctk.CTkFont(size=24, weight="bold")
+        self.configure(fg_color="transparent")
+
+        # Page Title
+        self.header = PageHeader(
+            master=self,
+            title="Data Transformer",
+            subtitle="Alat bantu yang diminta sama baginda kanjeng dimas adipati IDUY sang ATMIN😊🙏."
         )
-        title.pack(anchor="w", pady=(0, 20))
-        
-        placeholder = ctk.CTkLabel(
-            self,
+
+        # Placeholder Content Card
+        self.content_card = ctk.CTkFrame(self, fg_color=("gray86", "gray17"), corner_radius=8)
+        self.content_card.pack(fill="both", expand=True, pady=(5, 0))
+
+        self.placeholder = ctk.CTkLabel(
+            self.content_card,
             text="Fitur ini akan menangani transformasi dan cleaning data.\n\n"
                  "Status: Under Development\n\n"
                  "Fitur yang akan tersedia:\n"
@@ -33,7 +42,7 @@ class TransformerView(ctk.CTkFrame):
             justify="left",
             wraplength=700
         )
-        placeholder.pack(pady=50)
-    
+        self.placeholder.pack(pady=50)
+
     def on_show(self):
         pass

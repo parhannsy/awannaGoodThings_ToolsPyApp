@@ -11,7 +11,7 @@ from dataclasses import dataclass
 class AppConfig:
     """Application configuration."""
     
-    APP_NAME: str = "Sales Data Tool"
+    APP_NAME: str = "Awanna media's Tools"
     APP_VERSION: str = "1.0.0"
     APP_WIDTH: int = 1200
     APP_HEIGHT: int = 800

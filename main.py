@@ -14,7 +14,7 @@ if SRC_PATH not in sys.path:
     sys.path.insert(0, SRC_PATH)
 
 # Import TANPA 'src.' prefix
-from presentation.app import SalesDataApp
+from src.presentation.app import SalesDataApp
 
 
 def main():
