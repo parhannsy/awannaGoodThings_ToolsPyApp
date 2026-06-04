@@ -1,13 +1,13 @@
 """
-Komponen: InfoSection
-Menampilkan info rangkuman dan warning.
+Komponen: InfoSection (Generik)
+Menampilkan info rangkuman teks dinamis dan warning berdasarkan kebutuhan halaman.
 """
 
 import customtkinter as ctk
 
 
 class InfoSection:
-    """Section untuk info dan warning labels."""
+    """Section generik untuk info dan warning labels."""
 
     def __init__(self, parent_frame):
         self.parent = parent_frame
@@ -31,24 +31,16 @@ class InfoSection:
         )
         self.warning_label.pack(anchor="w", padx=15, pady=(0, 3))
 
-    def update_info(self, date_info, total_leads, total_paid, paid_ratio):
-        """Update info label."""
-        self.info_label.configure(
-            text=f"Rangkuman data paid dan lead {date_info} || "
-                 f"Total lead: {total_leads} - "
-                 f"Total paid: {total_paid} - "
-                 f"Paid ratio: {paid_ratio:.1f}%"
-        )
+    def display_info(self, text_content: str):
+        """
+        Menampilkan teks informasi kustom apa saja dari luar.
+        Sangat fleksibel untuk Regional Summary maupun Rate Zonasi.
+        """
+        self.info_label.configure(text=text_content)
 
-    def update_warning(self, total_raw, total_leads):
-        """Update warning label jika ada data yang tidak masuk master."""
-        if total_raw != total_leads:
-            diff = total_raw - total_leads
-            self.warning_label.configure(
-                text=f"[!] Warning: Ada {diff} data daerah yang tidak masuk Master List."
-            )
-        else:
-            self.warning_label.configure(text="")
+    def display_warning(self, text_warning: str):
+        """Menampilkan teks peringatan kustom dari luar."""
+        self.warning_label.configure(text=text_warning)
 
     def clear(self):
         """Clear both labels."""

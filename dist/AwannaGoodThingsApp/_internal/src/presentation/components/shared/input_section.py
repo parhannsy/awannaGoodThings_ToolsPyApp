@@ -1,6 +1,6 @@
 """
-Komponen: InputSection
-Area input file, tombol browse, proses, dan bersihkan.
+Komponen: InputSection (Generik)
+Area input file, tombol browse, proses, dan bersihkan yang fleksibel untuk semua halaman.
 """
 
 import customtkinter as ctk
@@ -9,14 +9,41 @@ from tkinter import filedialog
 
 
 class InputSection(ctk.CTkFrame):
-    """Section untuk input file dan action buttons."""
+    """Section generik untuk input file dan action buttons."""
 
-    def __init__(self, master, on_browse=None, on_process=None, on_clear=None, **kwargs):
+    def __init__(
+        self, 
+        master, 
+        title_label="Belum ada file dipilih",
+        browse_text="📁 Pilih File",
+        process_text="▶ Proses",
+        clear_text="🧹 Bersihkan",
+        file_types=None,
+        on_browse=None, 
+        on_process=None, 
+        on_clear=None, 
+        **kwargs
+    ):
         super().__init__(master, **kwargs)
+        self.default_title = title_label
         self.on_browse = on_browse
         self.on_process = on_process
         self.on_clear = on_clear
+        
+        # Tentukan default file types jika tidak didefinisikan dari luar
+        self.file_types = file_types if file_types else [
+            ("Excel files", "*.xlsx *.xls"),
+            ("CSV files", "*.csv"),
+            ("All files", "*.*")
+        ]
+        
         self.current_file_path = None
+        
+        # Simpan teks tombol untuk setup UI
+        self._browse_text = browse_text
+        self._process_text = process_text
+        self._clear_text = clear_text
+        
         self._setup_ui()
 
     def _setup_ui(self):
@@ -34,7 +61,7 @@ class InputSection(ctk.CTkFrame):
 
         self.file_path_label = ctk.CTkLabel(
             file_frame,
-            text="Belum ada file dipilih",
+            text=self.default_title,
             font=ctk.CTkFont(size=9),
             text_color="gray50",
             anchor="w"
@@ -43,7 +70,7 @@ class InputSection(ctk.CTkFrame):
 
         self.browse_btn = ctk.CTkButton(
             file_frame,
-            text="📁 Pilih File",
+            text=self._browse_text,
             command=self._browse_file,
             width=90,
             height=22,
@@ -57,7 +84,7 @@ class InputSection(ctk.CTkFrame):
 
         self.process_btn = ctk.CTkButton(
             btn_frame,
-            text="▶ Proses",
+            text=self._process_text,
             command=self._process_data,
             width=80,
             height=24,
@@ -68,7 +95,7 @@ class InputSection(ctk.CTkFrame):
 
         self.clear_btn = ctk.CTkButton(
             btn_frame,
-            text="🗑 Bersihkan",
+            text=self._clear_text,
             command=self._clear_all,
             width=80,
             height=24,
@@ -80,14 +107,10 @@ class InputSection(ctk.CTkFrame):
         self.clear_btn.pack(side="left", padx=2)
 
     def _browse_file(self):
-        """Browse for file."""
+        """Browse untuk memilih file secara dinamis berdasarkan file_types."""
         file_path = filedialog.askopenfilename(
             title="Pilih File Data",
-            filetypes=[
-                ("Excel files", "*.xlsx *.xls"),
-                ("CSV files", "*.csv"),
-                ("All files", "*.*")
-            ]
+            filetypes=self.file_types
         )
         if file_path:
             self.current_file_path = Path(file_path)
@@ -112,7 +135,7 @@ class InputSection(ctk.CTkFrame):
     def reset(self):
         """Reset ke state awal."""
         self.current_file_path = None
-        self.file_path_label.configure(text="Belum ada file dipilih", text_color="gray50")
+        self.file_path_label.configure(text=self.default_title, text_color="gray50")
         self.process_btn.configure(state="disabled")
 
     def get_file_path(self):

@@ -136,7 +136,7 @@ class Sidebar(ctk.CTkFrame):
 
         footer = ctk.CTkLabel(
             footer_container,
-            text="v1.0.0  •  Sales Data Tool",
+            text="v1.1.0  •  Awanna Media's Data Tool",
             font=ctk.CTkFont(size=10),
             text_color="gray50"
         )

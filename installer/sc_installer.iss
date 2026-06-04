@@ -3,7 +3,7 @@
 ; Non-commercial use only
 
 #define MyAppName "Awanna tools helper"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "AwannaGoodThings Media, Inc."
 #define MyAppExeName "AwannaGoodThingsApp.exe"
 #define MyAppAssocName MyAppName + " File"
@@ -33,7 +33,7 @@ DisableProgramGroupPage=yes
 ; Uncomment the following line to run in non administrative install mode (install for current user only).
 ;PrivilegesRequired=lowest
 OutputDir=D:\farhan\project\awannaGoodThings_ToolsPyApp\installer
-OutputBaseFilename=AwannaTools_Setup_v1.0
+OutputBaseFilename=AwannaTools_Setup_v1.1.0
 SolidCompression=yes
 WizardStyle=modern dynamic
 
