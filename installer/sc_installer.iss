@@ -3,7 +3,7 @@
 ; Non-commercial use only
 
 #define MyAppName "Awanna tools helper"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "AwannaGoodThings Media, Inc."
 #define MyAppExeName "AwannaGoodThingsApp.exe"
 #define MyAppAssocName MyAppName + " File"
@@ -32,8 +32,8 @@ ChangesAssociations=yes
 DisableProgramGroupPage=yes
 ; Uncomment the following line to run in non administrative install mode (install for current user only).
 ;PrivilegesRequired=lowest
-OutputDir=D:\farhan\project\awannaGoodThings_ToolsPyApp\installer
-OutputBaseFilename=AwannaTools_Setup_v1.0
+OutputDir=D:\FOLDER FARHAN\masterApp\awannaTools\installer
+OutputBaseFilename=AwannaTools_Setup_v1.1.0
 SolidCompression=yes
 WizardStyle=modern dynamic
 
@@ -44,8 +44,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "D:\farhan\project\awannaGoodThings_ToolsPyApp\dist\AwannaGoodThingsApp\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\farhan\project\awannaGoodThings_ToolsPyApp\dist\AwannaGoodThingsApp\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "D:\FOLDER FARHAN\masterApp\awannaTools\dist\AwannaGoodThingsApp\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\FOLDER FARHAN\masterApp\awannaTools\dist\AwannaGoodThingsApp\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Registry]
