@@ -32,7 +32,11 @@ ChangesAssociations=yes
 DisableProgramGroupPage=yes
 ; Uncomment the following line to run in non administrative install mode (install for current user only).
 ;PrivilegesRequired=lowest
+<<<<<<< HEAD
 OutputDir=D:\FOLDER FARHAN\masterApp\awannaTools\installer
+=======
+OutputDir=D:\farhan\project\awannaGoodThings_ToolsPyApp\installer
+>>>>>>> e23b549a5c6ac98c516753504eafa3baa860a299
 OutputBaseFilename=AwannaTools_Setup_v1.1.0
 SolidCompression=yes
 WizardStyle=modern dynamic
