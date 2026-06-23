@@ -8,10 +8,10 @@ from pathlib import Path
 from infrastructure.config.app_config import AppConfig
 from presentation.components.side_bar import Sidebar
 from presentation.views.dashboard_view import DashboardView
-from presentation.views.rate_zonasi_view import RateZonasiView
-from presentation.views.regional_summary_view import RegionalSummaryView
-from presentation.views.transformer_view import TransformerView
-from presentation.views.performance_view import PerformanceView
+from presentation.views.tools.rate_zonasi_view import RateZonasiView
+from presentation.views.tools.regional_summary_view import RegionalSummaryView
+from presentation.views.tools.transformer_view import TransformerView
+from presentation.views.tools.performance_view import PerformanceView
 from presentation.views.history_view import HistoryView
 
 
