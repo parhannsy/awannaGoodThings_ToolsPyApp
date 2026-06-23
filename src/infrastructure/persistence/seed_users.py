@@ -27,7 +27,7 @@ def seed_complete_user_account():
         return
 
     # Data Akun yang kamu minta
-    email_user = "akunmentor@gmail.com"
+    email_user = "advparhan@gmail.com"
     password_user = "Bismillah123/" # Fire Auth otomatis meng-hash password ini di server Google
 
     # ==========================================
@@ -74,14 +74,14 @@ def seed_complete_user_account():
         "fields": {
             "idUser": {"stringValue": firebase_uid}, # DISINKRONKAN: Menggunakan UID dari Fire Auth
             "email": {"stringValue": email_user},
-            "nama": {"stringValue": "agung gunawan"},
-            "panggilan": {"stringValue": "mentor aja"},
+            "nama": {"stringValue": "Muhammad Farhan Syadida"},
+            "panggilan": {"stringValue": "Parhan"},
             "alamat": {"stringValue": "Bojong, cilimus"},
-            "nohp": {"stringValue": "080000000000"},
-            "role": {"stringValue": "mentor"},
+            "nohp": {"stringValue": "08976580885"},
+            "role": {"stringValue": "advertiser"},
             "isActive": {"booleanValue": True},
             "bank": {"stringValue": "BCA"},
-            "nomor_rekening": {"stringValue": "0000000000"}
+            "nomor_rekening": {"stringValue": "2992069440"}
         }
     }
 

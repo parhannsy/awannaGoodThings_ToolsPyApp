@@ -1,13 +1,15 @@
 """
 LoginView
-Kini diubah menjadi ctk.CTkFrame untuk mendukung arsitektur Single Window.
-Menerima master window dan callback untuk memberi tahu jika login sukses.
+Mendukung arsitektur Single Window dengan penanganan dependensi konfigurasi 
+yang defensif untuk mencegah AttributeError akibat kesalahan tipe data runtime.
 """
 
 import threading
 import customtkinter as ctk
 from tkinter import messagebox
 from infrastructure.persistence.firebase_auth_impl import FirebaseAuthRepository
+from infrastructure.config.app_config import AppConfig
+
 
 class LoginView(ctk.CTkFrame):
     def __init__(self, master, on_login_success_callback, **kwargs):
@@ -17,6 +19,24 @@ class LoginView(ctk.CTkFrame):
         self.on_login_success = on_login_success_callback
         self.auth_repo = FirebaseAuthRepository()
         
+        # 🌟 PERBAIKAN DEFENSIF: Validasi ketat tipe data master.config (Atasi AttributeError 'function')
+        self.app_config = None
+        if hasattr(master, 'config'):
+            # Jika master.config adalah fungsi/callable (bukan instansi objek), kita eksekusi fungsinya
+            if callable(master.config):
+                try:
+                    self.app_config = master.config()
+                except Exception:
+                    self.app_config = AppConfig()
+            else:
+                self.app_config = master.config
+        
+        # Fallback terakhir jika tetap gagal mendapatkan objek valid
+        if not self.app_config or isinstance(self.app_config, type) or not hasattr(self.app_config, 'get_last_login_email'):
+            self.app_config = AppConfig()
+            # Pastikan direktori cache siap jika menggunakan instansi fallback baru
+            self.app_config.ensure_directories()
+            
         self._setup_ui()
 
     def _setup_ui(self):
@@ -48,7 +68,11 @@ class LoginView(ctk.CTkFrame):
         
         self.entry_email = ctk.CTkEntry(self.card, width=320, height=35, fg_color="#374151", border_color="#4B5563")
         self.entry_email.pack(padx=30)
-        self.entry_email.insert(0, "akunmentor@gmail.com")
+        
+        # Ambil dari cache lokal melalui penampung config yang sudah divalidasi aman
+        last_email = self.app_config.get_last_login_email()
+        if last_email:
+            self.entry_email.insert(0, last_email)
 
         # Input Password
         self.password_label = ctk.CTkLabel(self.card, text="Password", font=ctk.CTkFont(size=12), text_color="#E5E7EB")
@@ -90,7 +114,10 @@ class LoginView(ctk.CTkFrame):
                 self.after(0, lambda: messagebox.showerror("Akses Ditolak", "Akun Anda saat ini dinonaktifkan."))
                 return
             
-            # Pemicuan sukses langsung aman tanpa perlu delay jeda hancurkan window
+            # Simpan email ke dalam persistent storage
+            self.app_config.save_last_login_email(email)
+            
+            # Pemicuan sukses
             self.after(0, lambda: self.on_login_success(user_profile))
         else:
             self.after(0, lambda: self.btn_login.configure(state="normal", text="Sign In"))

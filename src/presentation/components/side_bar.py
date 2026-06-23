@@ -1,52 +1,20 @@
 """
 Component: Sidebar
-Menyediakan panel navigasi utama dengan dukungan Scrollable Viewport, Live Search Filter,
-tombol "Clear Search", manajemen visibilitas scrollbar otomatis, fitur Group Menu Expandable,
-Indentasi Sub-navigasi, State Label Aktif, dan Pop-up Konfirmasi Logout Modern.
+Menyediakan panel navigasi utama yang menerima menu secara dinamis berdasarkan role,
+mendukung Expandable View, Live Search, dan konfirmasi Logout.
 """
 
 import customtkinter as ctk
-from typing import Callable, Dict
+from typing import Callable, Dict, List
 
 
 class Sidebar(ctk.CTkFrame):
-    """Navigation sidebar component with enhanced visual hierarchy and smart states."""
-
-    MENU_GROUPS = [
-        {
-            "label": "Dashboard",
-            "items": [
-                {"id": "dashboard", "label": "Dashboard", "icon": "🏠"},
-                {"id": "history", "label": "History", "icon": "🕘"},
-                {"id": "firebase_status", "label": "Firebase Status", "icon": "⚡"},
-            ]
-        },
-        {
-            "label": "Data",
-            "items": [
-                {"id": "produk_index", "label": "Produk", "icon": "📦"}
-            ]
-        },
-        {
-            "label": "Keuangan",
-            "items": [
-                {"id": "keuangan_index", "label": "Keuangan", "icon": "💰"}
-            ]
-        },
-        {
-            "label": "TOOLS",
-            "items": [
-                {"id": "regional_summary", "label": "Regional Summary", "icon": "📊"},
-                {"id": "rate_zonasi", "label": "Rate Zonasi", "icon": "📍"},
-                {"id": "transformer", "label": "Data Transformer", "icon": "🔄"},
-                {"id": "performance", "label": "Performance", "icon": "📈"},
-            ]
-        }
-    ]
+    """Navigation sidebar component with dynamic menu rendering based on user role."""
 
     def __init__(
         self,
         master,
+        menu_groups: List[dict],  # 🌟 Menerima daftar menu dinamis hasil saringan role
         on_navigate: Callable[[str], None],
         on_logout: Callable[[], None],
         app_name: str,
@@ -54,6 +22,7 @@ class Sidebar(ctk.CTkFrame):
     ):
         super().__init__(master, width=250, **kwargs)
 
+        self.menu_groups = menu_groups
         self.on_navigate = on_navigate
         self.on_logout = on_logout
         
@@ -62,16 +31,15 @@ class Sidebar(ctk.CTkFrame):
         self.group_labels: Dict[str, ctk.CTkLabel] = {}
         self.item_to_group: Dict[str, str] = {}
         
-        # Menyimpan ID halaman yang saat ini sedang aktif
         self.current_active_view: str = ""
         
         # STATE MANAGEMENT UNTUK EXPANDABLE MENU
-        self.group_states: Dict[str, bool] = {
-            "Dashboard": True,
-            "Data": True,
-            "Keuangan": True,
-            "TOOLS": False
-        }
+        # Inisialisasi default state buka/tutup grup secara dinamis
+        self.group_states: Dict[str, bool] = {}
+        for group in self.menu_groups:
+            name = group["label"]
+            # Khusus TOOLS default-nya False (hide), sisanya True (show)
+            self.group_states[name] = False if name.upper() == "TOOLS" else True
 
         self._setup_layout()
         self._setup_header(app_name)
@@ -109,10 +77,8 @@ class Sidebar(ctk.CTkFrame):
         line.pack(fill="x", padx=15, pady=(10, 10))
 
     def _setup_search_bar(self):
-        """Membuat kolom pencarian dengan tombol silang (Clear) yang dinamis."""
         self.search_container = ctk.CTkFrame(self, fg_color="transparent")
         self.search_container.pack(fill="x", padx=15, pady=(0, 10))
-        
         self.search_container.grid_columnconfigure(0, weight=1)
 
         self.search_entry = ctk.CTkEntry(
@@ -161,12 +127,10 @@ class Sidebar(ctk.CTkFrame):
         self._render_full_menu()
 
     def _toggle_group(self, group_name: str):
-        """Mengubah status expand/collapse grup menu secara interaktif."""
         self.group_states[group_name] = not self.group_states[group_name]
         self._refresh_menu_display()
 
     def _refresh_menu_display(self):
-        """Mengatur ulang susunan pengepakan widget berdasarkan state expand/collapse saat ini."""
         self.empty_state_label.pack_forget()
         for label in self.group_labels.values():
             label.pack_forget()
@@ -175,7 +139,7 @@ class Sidebar(ctk.CTkFrame):
 
         active_group = self.item_to_group.get(self.current_active_view, "")
 
-        for group in self.MENU_GROUPS:
+        for group in self.menu_groups:
             group_name = group["label"]
             is_expanded = self.group_states.get(group_name, True)
             
@@ -198,10 +162,9 @@ class Sidebar(ctk.CTkFrame):
             self.menu_frame._scrollbar.grid_forget()
 
     def _render_full_menu(self):
-        """Membangun total layout widget menu pertama kali secara sekuensial."""
         self.empty_state_label.pack_forget()
 
-        for group in self.MENU_GROUPS:
+        for group in self.menu_groups:
             group_name = group["label"]
             
             if group_name not in self.group_labels:
@@ -237,7 +200,6 @@ class Sidebar(ctk.CTkFrame):
         self._refresh_menu_display()
 
     def _filter_menu(self, event=None):
-        """Menyaring tampilan menu secara real-time dan mengelola visibilitas scrollbar secara cerdas."""
         query = self.search_entry.get().strip().lower()
         
         if not query:
@@ -255,7 +217,7 @@ class Sidebar(ctk.CTkFrame):
         any_match_found = False
         total_visible_rows = 0
 
-        for group in self.MENU_GROUPS:
+        for group in self.menu_groups:
             group_name = group["label"]
             items_matching = [item for item in group["items"] if query in item["label"].lower()]
             
@@ -284,7 +246,6 @@ class Sidebar(ctk.CTkFrame):
                 self.menu_frame._create_grid()
 
     def _clear_search(self):
-        """Menghapus isi kolom pencarian, menyembunyikan tombol silang, dan mereset urutan menu."""
         self.search_entry.delete(0, 'end')
         self.btn_clear_search.grid_forget()
         self.empty_state_label.pack_forget()
@@ -298,17 +259,13 @@ class Sidebar(ctk.CTkFrame):
         self.focus_set()
 
     def _trigger_logout_confirmation(self):
-        """🌟 KUSTOM MODAL DIALOG DI TKINTER: Memunculkan konfirmasi logout modern."""
-        # Ambil referensi window utama/root
         root = self.winfo_toplevel()
         
-        # Buat jendela pop-up kustom berbasis CTkToplevel
         dialog = ctk.CTkToplevel(self)
         dialog.title("Confirm Sign Out")
         dialog.geometry("340x180")
         dialog.resizable(False, False)
         
-        # Konfigurasi agar pop-up selalu berada di tengah window utama
         root_x = root.winfo_x()
         root_y = root.winfo_y()
         root_w = root.winfo_width()
@@ -318,11 +275,9 @@ class Sidebar(ctk.CTkFrame):
         pos_y = root_y + (root_h // 2) - (180 // 2)
         dialog.geometry(f"340x180+{pos_x}+{pos_y}")
         
-        # SIFAT MODAL PROFESIONAL: Kunci fokus aplikasi hanya pada jendela dialog ini
         dialog.transient(root)
         dialog.grab_set()
         
-        # Kustomisasi Konten Dialog
         msg_icon = ctk.CTkLabel(dialog, text="🚪", font=ctk.CTkFont(size=28))
         msg_icon.pack(pady=(20, 5))
         
@@ -334,18 +289,16 @@ class Sidebar(ctk.CTkFrame):
         )
         msg_label.pack(pady=10, padx=20)
         
-        # Container Tombol Aksi
         btn_container = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_container.pack(fill="x", side="bottom", pady=20, padx=20)
         
         def on_confirm():
             dialog.destroy()
-            self.on_logout()  # Jalankan callback logout asli jika menekan keluar
+            self.on_logout()
             
         def on_cancel():
-            dialog.destroy()  # Tutup modal tanpa aksi jika menekan batal
+            dialog.destroy()
             
-        # Tombol Batal (Gaya Netral)
         btn_cancel = ctk.CTkButton(
             btn_container,
             text="Batal",
@@ -358,7 +311,6 @@ class Sidebar(ctk.CTkFrame):
         )
         btn_cancel.pack(side="left", padx=(0, 10))
         
-        # Tombol Keluar (Gaya Destruktif / Merah)
         btn_signout = ctk.CTkButton(
             btn_container,
             text="Keluar Akun",
@@ -378,7 +330,6 @@ class Sidebar(ctk.CTkFrame):
         line = ctk.CTkFrame(footer_container, height=1, fg_color=("gray75", "gray25"))
         line.pack(fill="x", pady=(0, 10))
 
-        # 🌟 PERBAIKAN: Mengalihkan 'command' langsung ke fungsi pemicu konfirmasi internal kita
         self.btn_logout = ctk.CTkButton(
             footer_container,
             text="🚪   Sign Out",
@@ -402,7 +353,6 @@ class Sidebar(ctk.CTkFrame):
         footer.pack()
 
     def set_active(self, view_id: str):
-        """Mengatur tombol navigasi aktif sekaligus memperbarui warna label induknya."""
         self.current_active_view = view_id
         
         for vid, btn in self.buttons.items():
