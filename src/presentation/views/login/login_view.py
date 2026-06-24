@@ -1,12 +1,11 @@
 """
 LoginView
-Mendukung arsitektur Single Window dengan penanganan dependensi konfigurasi 
-yang defensif untuk mencegah AttributeError akibat kesalahan tipe data runtime.
+Menangani proses interaksi UI untuk autentikasi pengguna.
+Terintegrasi langsung dengan FirebaseAuthRepository REST API dan kebijakan Soft Delete.
 """
 
 import threading
 import customtkinter as ctk
-from tkinter import messagebox
 from infrastructure.persistence.firebase_auth_impl import FirebaseAuthRepository
 from infrastructure.config.app_config import AppConfig
 
@@ -19,10 +18,9 @@ class LoginView(ctk.CTkFrame):
         self.on_login_success = on_login_success_callback
         self.auth_repo = FirebaseAuthRepository()
         
-        # 🌟 PERBAIKAN DEFENSIF: Validasi ketat tipe data master.config (Atasi AttributeError 'function')
+        # PERBAIKAN DEFENSIF: Validasi ketat tipe data master.config (Atasi AttributeError 'function')
         self.app_config = None
         if hasattr(master, 'config'):
-            # Jika master.config adalah fungsi/callable (bukan instansi objek), kita eksekusi fungsinya
             if callable(master.config):
                 try:
                     self.app_config = master.config()
@@ -34,7 +32,6 @@ class LoginView(ctk.CTkFrame):
         # Fallback terakhir jika tetap gagal mendapatkan objek valid
         if not self.app_config or isinstance(self.app_config, type) or not hasattr(self.app_config, 'get_last_login_email'):
             self.app_config = AppConfig()
-            # Pastikan direktori cache siap jika menggunakan instansi fallback baru
             self.app_config.ensure_directories()
             
         self._setup_ui()
@@ -66,7 +63,7 @@ class LoginView(ctk.CTkFrame):
         self.email_label = ctk.CTkLabel(self.card, text="Email Address", font=ctk.CTkFont(size=12), text_color="#E5E7EB")
         self.email_label.pack(anchor="w", padx=30, pady=(10, 2))
         
-        self.entry_email = ctk.CTkEntry(self.card, width=320, height=35, fg_color="#374151", border_color="#4B5563")
+        self.entry_email = ctk.CTkEntry(self.card, width=320, height=35, fg_color="#374151", border_color="#4B5563", text_color="#FFFFFF")
         self.entry_email.pack(padx=30)
         
         # Ambil dari cache lokal melalui penampung config yang sudah divalidasi aman
@@ -78,7 +75,7 @@ class LoginView(ctk.CTkFrame):
         self.password_label = ctk.CTkLabel(self.card, text="Password", font=ctk.CTkFont(size=12), text_color="#E5E7EB")
         self.password_label.pack(anchor="w", padx=30, pady=(15, 2))
         
-        self.entry_password = ctk.CTkEntry(self.card, width=320, height=35, show="*", fg_color="#374151", border_color="#4B5563")
+        self.entry_password = ctk.CTkEntry(self.card, width=320, height=35, show="*", fg_color="#374151", border_color="#4B5563", text_color="#FFFFFF")
         self.entry_password.pack(padx=30)
 
         # Button Sign In
@@ -98,27 +95,54 @@ class LoginView(ctk.CTkFrame):
         email = self.entry_email.get().strip()
         password = self.entry_password.get().strip()
 
+        from presentation.components.shared.toast import Toast
         if not email or not password:
-            messagebox.showwarning("Peringatan", "Email dan Password wajib diisi!")
+            Toast.error(master=self.winfo_toplevel(), message="Email dan Password wajib diisi!")
             return
 
         self.btn_login.configure(state="disabled", text="Authenticating...")
         threading.Thread(target=self._login_worker, args=(email, password), daemon=True).start()
 
     def _login_worker(self, email, password):
-        user_profile = self.auth_repo.login_user(email, password)
-        
-        if user_profile:
-            if not user_profile["isActive"]:
+        """
+        Worker thread asinkron yang memanfaatkan fungsi pemanggilan internal 
+        dari FirebaseAuthRepository secara efisien tanpa pembacaan ganda.
+        """
+        from presentation.components.shared.toast import Toast
+        try:
+            # 1. Panggil fungsi repositori asli milikmu
+            user_profile = self.auth_repo.login_user(email, password)
+            
+            # Jika kredensial salah atau network bermasalah, repositori mengembalikan None
+            if not user_profile:
+                raise ValueError("Email atau Password salah, atau gagal terhubung ke server.")
+            
+            # 2. INTERUPSI POLICY: Cek Kebijakan Soft Delete (isActive == False)
+            # Nilai diambil dari key 'isActive' hasil parsing repositorimu
+            if not user_profile.get("isActive", True):
+                print(f"[SECURITY CONTROL] Login ditolak. Akun {email} berstatus NONAKTIF.")
+                
                 self.after(0, lambda: self.btn_login.configure(state="normal", text="Sign In"))
-                self.after(0, lambda: messagebox.showerror("Akses Ditolak", "Akun Anda saat ini dinonaktifkan."))
+                self.after(0, lambda: Toast.error(
+                    master=self.winfo_toplevel(),
+                    message="Ups, akunmu dinonaktifkan. Silakan hubungi Mentor atau Admin"
+                ))
                 return
-            
-            # Simpan email ke dalam persistent storage
-            self.app_config.save_last_login_email(email)
-            
-            # Pemicuan sukses
+
+            # 3. Cache email jika sukses dan alirkan data user ke Main App
+            try:
+                self.app_config.set_last_login_email(email)
+            except Exception:
+                pass
+                
             self.after(0, lambda: self.on_login_success(user_profile))
-        else:
+            
+        except Exception as e:
+            error_msg = str(e)
+            print(f"[LOGIN CRITICAL ERROR] Detail kegagalan: {error_msg}")
+            
             self.after(0, lambda: self.btn_login.configure(state="normal", text="Sign In"))
-            self.after(0, lambda: messagebox.showerror("Gagal Autentikasi", "Email atau Password salah."))
+            self.after(0, lambda: Toast.error(
+                master=self.winfo_toplevel(), 
+                message=f"Login Gagal: {error_msg}"
+            ))

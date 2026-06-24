@@ -16,7 +16,8 @@ MASTER_MENU_GROUPS = [
     {
         "label": "Data",
         "items": [
-            {"id": "produk_index", "label": "Produk", "icon": "📦"}
+            {"id": "produk_index", "label": "Produk", "icon": "📦"},
+            {"id": "user_management_index", "label": "Manajemen Staf", "icon": "👥"}
         ]
     },
     {
@@ -38,8 +39,8 @@ MASTER_MENU_GROUPS = [
 
 # Matriks Hak Akses Halaman berdasarkan ID item menu
 ROLE_ACCESS_MATRIX = {
-    "mentor": ["dashboard", "history", "firebase_status", "produk_index", "keuangan_index", "regional_summary", "rate_zonasi", "transformer", "performance"],
-    "admin": ["dashboard", "history", "firebase_status", "produk_index", "keuangan_index", "regional_summary", "rate_zonasi", "transformer", "performance"],
+    "mentor": ["dashboard", "user_management_index", "history", "firebase_status", "produk_index", "keuangan_index", "regional_summary", "rate_zonasi", "transformer", "performance"],
+    "admin": ["dashboard", "user_management_index", "history", "firebase_status", "produk_index", "keuangan_index", "regional_summary", "rate_zonasi", "transformer", "performance"],
     
     # Keuangan: Hanya dashboard, firebase status, area keuangan, dan TOOLS
     "keuangan": ["dashboard", "firebase_status", "keuangan_index", "regional_summary", "rate_zonasi", "transformer", "performance"],

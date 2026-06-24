@@ -1,14 +1,14 @@
 """
 Main App: SalesDataApp
-Mengimplementasikan Single Window Architecture dengan Dynamic Role-Based Access Control (RBAC).
-Hanya memuat view dan menu yang diizinkan sesuai hak akses role aktif.
+Mengimplementasikan Single Window Architecture dengan True Lazy Loading & 
+Dynamic Role-Based Access Control (RBAC). Objek halaman hanya dibuat saat diakses.
 """
 
 import customtkinter as ctk
 from pathlib import Path
 
 from infrastructure.config.app_config import AppConfig
-from infrastructure.config.role_config import get_allowed_menu_for_role, ROLE_ACCESS_MATRIX # 🌟 Import RBAC Engine
+from infrastructure.config.role_config import get_allowed_menu_for_role, ROLE_ACCESS_MATRIX
 from presentation.components.side_bar import Sidebar
 from presentation.views.dashboard_view import DashboardView
 from presentation.views.keuangan.index import KeuanganIndexView
@@ -20,11 +20,12 @@ from presentation.views.tools.performance_view import PerformanceView
 from presentation.views.history_view import HistoryView
 from presentation.views.firebase_status.firebase_status_view import FirebaseStatusView
 from presentation.views.login.login_view import LoginView
+from presentation.views.user_management.index import UserManagementIndexView
 from presentation.components.shared.toast import Toast
 
 
 class SalesDataApp:
-    """Main application window with Dynamic RBAC routing."""
+    """Main application window with Dynamic RBAC routing and Lazy View Initialization."""
     
     def __init__(self):
         self.config = AppConfig()
@@ -39,8 +40,6 @@ class SalesDataApp:
         self.root.minsize(900, 600)
         
         self.session_user = None
-        
-        # Tampilkan layar login terlebih dahulu saat aplikasi dibuka
         self._show_login_screen()
     
     def _show_login_screen(self):
@@ -52,28 +51,63 @@ class SalesDataApp:
         self.login_page.pack(fill="both", expand=True)
 
     def _handle_login_success(self, user_profile: dict):
-        """Callback yang dipicu secara otomatis saat autentikasi Firebase sukses."""
+        """Callback otomatis saat login sukses. Mendukung interupsi CompleteProfileView."""
         self.session_user = user_profile
         
+        # 1. Bersihkan panel login dari jendela utama secara total
         self.login_page.pack_forget()
         self.login_page.destroy()
         
-        print(f"[SESSION STARTED] Berhasil masuk sebagai: {user_profile['nama']} ({user_profile['role']})")
+        print(f"[SESSION STARTED] Berhasil login sebagai: {user_profile.get('email')} (Role: {user_profile.get('role')})")
         
-        # 🌟 LOGIKA RBAC: Ambil struktur menu yang valid khusus untuk role ini
-        self.allowed_menu_groups = get_allowed_menu_for_role(user_profile['role'])
+        # 🌟 LOGIKA UTAMA INTERUPSI: Deteksi boolean dengan konversi defensif
+        is_complete = user_profile.get("isProfileComplete", False)
+        if str(is_complete).lower() == 'true':
+            is_complete = True
+            
+        if not is_complete:
+            print(f"[PROFILE INCOMPLETE] Mengalihkan {user_profile.get('email')} ke halaman pengisian profil.")
+            
+            from presentation.views.login.complete_profile import CompleteProfileView
+            
+            self.complete_profile_page = CompleteProfileView(
+                master=self.root,
+                session_user=self.session_user,
+                on_completion_success=self._handle_profile_completion_finish
+            )
+            self.complete_profile_page.pack(fill="both", expand=True)
+            return
+
+        # 2. ALUR NORMAL: Jika profil sudah lengkap, bangun layout workspace
+        self._build_main_workspace()
+
+    def _handle_profile_completion_finish(self, completed_user_profile: dict):
+        """Dipanggil setelah pengguna sukses mengisi nama di CompleteProfileView."""
+        self.session_user = completed_user_profile
         
-        # Bangun kembali seluruh tata letak dan komponen dashboard utama aplikasi
+        # Bersihkan halaman interupsi dari window utama
+        self.complete_profile_page.pack_forget()
+        self.complete_profile_page.destroy()
+        
+        print(f"[PROFILE COMPLETED] Profil berhasil diperbarui untuk: {self.session_user.get('nama')}")
+        
+        self._build_main_workspace()
+
+    def _build_main_workspace(self):
+        """Helper internal untuk membangun infrastruktur layout, sidebar, dan views."""
+        # Ekstraksi dan sanitasi nama role
+        user_role = str(self.session_user.get('role', 'advertiser')).strip().lower()
+        self.allowed_menu_groups = get_allowed_menu_for_role(user_role)
+        
         self._setup_layout()
         self._setup_sidebar()
         self._setup_views()
         
-        # Alihkan tampilan langsung ke halaman dashboard bawaan
         self.show_view("dashboard")
 
         Toast.success(
             master=self.root,
-            message=f"Selamat datang kembali, {user_profile.get('nama', 'User')}!"
+            message=f"Selamat datang kembali, {self.session_user.get('nama', 'User')}!"
         )
 
     def _handle_logout(self):
@@ -89,7 +123,6 @@ class SalesDataApp:
             self.content_frame.destroy()
             
         print("[SESSION CLOSED] Sesi berhasil ditutup secara aman. Kembali ke layar login.")
-        
         self._show_login_screen()
 
         Toast.success(
@@ -102,7 +135,6 @@ class SalesDataApp:
         self.root.grid_rowconfigure(0, weight=1)
     
     def _setup_sidebar(self):
-        # 🌟 PERBAIKAN: Melempar daftar menu tersaring (self.allowed_menu_groups) ke Sidebar
         self.sidebar = Sidebar(
             master=self.root,
             menu_groups=self.allowed_menu_groups,
@@ -113,7 +145,7 @@ class SalesDataApp:
         self.sidebar.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
     
     def _setup_views(self):
-        """🌟 OPTIMASI RE-ARCHITECTING: Hanya menginstansiasi view yang diizinkan oleh Role."""
+        """🌟 PERBAIKAN ARSITEKTUR: Menerapkan True Lazy Loading Menggunakan Lambda Blueprint."""
         self.views = {}
         
         self.content_frame = ctk.CTkFrame(self.root, fg_color="transparent")
@@ -121,37 +153,42 @@ class SalesDataApp:
         self.content_frame.grid_columnconfigure(0, weight=1)
         self.content_frame.grid_rowconfigure(0, weight=1)
         
-        # Map blueprint instansiasi seluruh view kelas
-        view_blueprints = {
-            "dashboard": DashboardView,
-            "regional_summary": RegionalSummaryView,
-            "rate_zonasi": RateZonasiView,
-            "transformer": TransformerView,
-            "performance": PerformanceView,
-            "history": HistoryView,
-            "firebase_status": FirebaseStatusView,
-            "produk_index": ProdukIndexView,
-            "keuangan_index": KeuanganIndexView
+        user_role = str(self.session_user.get('role', 'advertiser')).strip().lower()
+        self.allowed_ids = ROLE_ACCESS_MATRIX.get(user_role, ["dashboard"])
+        
+        self.view_blueprints = {
+            "dashboard": lambda master: DashboardView(master),
+            "regional_summary": lambda master: RegionalSummaryView(master),
+            "rate_zonasi": lambda master: RateZonasiView(master),
+            "transformer": lambda master: TransformerView(master),
+            "performance": lambda master: PerformanceView(master),
+            "history": lambda master: HistoryView(master),
+            "firebase_status": lambda master: FirebaseStatusView(master),
+            "produk_index": lambda master: ProdukIndexView(master),
+            "keuangan_index": lambda master: KeuanganIndexView(master),
+            "user_management_index": lambda master: UserManagementIndexView(master)
         }
-        
-        # Ambil daftar ID yang diizinkan untuk role ini
-        user_role = self.session_user['role'].strip().lower()
-        allowed_ids = ROLE_ACCESS_MATRIX.get(user_role, ["dashboard"])
-        
-        # 🌟 LAZY LAUNCHER: Instansiasi HANYA view yang diperbolehkan oleh hak akses role
-        for view_id, view_class in view_blueprints.items():
-            if view_id in allowed_ids:
-                self.views[view_id] = view_class(self.content_frame)
-                self.views[view_id].grid(row=0, column=0, sticky="nsew")
-                self.views[view_id].grid_remove()
     
     def show_view(self, view_name: str):
+        """Melahirkan objek view secara dinamis dan aman saat menu diklik."""
+        if view_name not in self.allowed_ids:
+            print(f"[SECURITY ALERT] Hak akses ditolak untuk halaman: {view_name}")
+            return
+
         for view in self.views.values():
             view.grid_remove()
         
+        if view_name not in self.views and view_name in self.view_blueprints:
+            print(f"[LAZY ENGINE] Menginstansiasi halaman baru: '{view_name}'")
+            self.views[view_name] = self.view_blueprints[view_name](self.content_frame)
+            self.views[view_name].grid(row=0, column=0, sticky="nsew")
+        
         if view_name in self.views:
             self.views[view_name].grid()
-            self.views[view_name].on_show()
+            
+            if hasattr(self.views[view_name], 'on_show'):
+                self.views[view_name].on_show()
+                
             self.sidebar.set_active(view_name)
     
     def run(self):

@@ -60,6 +60,7 @@ class FirebaseAuthRepository:
                     "panggilan": fields.get("panggilan", {}).get("stringValue", ""),
                     "role": fields.get("role", {}).get("stringValue", ""),
                     "isActive": fields.get("isActive", {}).get("booleanValue", False),
+                    "isProfileComplete": fields.get("isProfileComplete", {}).get("booleanValue", False),
                 }
                 return profile
             return None
