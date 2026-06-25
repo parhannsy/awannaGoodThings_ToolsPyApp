@@ -4,7 +4,7 @@ Container responsive untuk grid tabel dengan smart adaptive layout yang bisa men
 """
 
 import customtkinter as ctk
-from src.presentation.components.regional_summary.table_card import TableCard
+from presentation.components.regional_summary.table_card import TableCard
 
 
 class TablesContainer:

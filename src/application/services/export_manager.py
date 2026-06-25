@@ -6,13 +6,13 @@ from pathlib import Path
 from typing import List
 
 from domain.entities.sales_summary import RegionalSummary
-from infrastructure.persistence.excel_writter import ExcelWriter
+from application.ports.excel_writer_port import ExcelWriterPort
 
 
 class ExportManagerService:
     """Manage export operations to Excel."""
     
-    def __init__(self, excel_writer: ExcelWriter):
+    def __init__(self, excel_writer: ExcelWriterPort):
         self._writer = excel_writer
     
     def export_regional_summary(

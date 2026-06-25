@@ -1,6 +1,6 @@
 import requests
 import json
-from src.infrastructure.config.firebase_config import FirebaseConfig
+from infrastructure.config.firebase_config import FirebaseConfig
 
 class FirebaseZonasiRepository:
     def __init__(self):

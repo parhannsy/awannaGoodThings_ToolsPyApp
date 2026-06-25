@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class FirebaseConfig:
-    API_KEY = os.getenv("FIREBASE_API_KEY")
+    API_KEY = os.getenv("FIREBASE_API_KEY") or "AIzaSyAOXtdlNhQ6EKySu2CZmMgNvYiVZhUjL28"
     PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID")
     
     @classmethod

@@ -18,13 +18,13 @@ import customtkinter as ctk
 import pandas as pd
 import logging
 
-from src.presentation.components.rate_zonasi.constant import MASTER_PROVINCES, STATUS_DELIVE, STATUS_RTS, COLORS, FONTS
-from src.presentation.components.rate_zonasi.province_normalizer import normalize_province
-from src.presentation.components.rate_zonasi.input_section import RateZonasiInputSection
-from src.presentation.components.rate_zonasi.info_bar import RateZonasiInfoBar
-from src.presentation.components.rate_zonasi.nav_bar import RateZonasiNavBar
-from src.presentation.components.rate_zonasi.tables_container import RateZonasiTablesContainer
-from src.presentation.components.rate_zonasi.scroll_manager import RateZonasiScrollManager
+from presentation.components.rate_zonasi.constant import MASTER_PROVINCES, STATUS_DELIVE, STATUS_RTS, COLORS, FONTS
+from presentation.components.rate_zonasi.province_normalizer import normalize_province
+from presentation.components.rate_zonasi.input_section import RateZonasiInputSection
+from presentation.components.rate_zonasi.info_bar import RateZonasiInfoBar
+from presentation.components.rate_zonasi.nav_bar import RateZonasiNavBar
+from presentation.components.rate_zonasi.tables_container import RateZonasiTablesContainer
+from presentation.components.rate_zonasi.scroll_manager import RateZonasiScrollManager
 
 # ============================================================
 # LOGGING SETUP

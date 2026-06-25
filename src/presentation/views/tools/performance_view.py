@@ -5,7 +5,7 @@ Halaman pelacakan performa pengolahan data dengan komponen modular.
 
 import customtkinter as ctk
 
-from src.presentation.components.shared.page_header import PageHeader
+from presentation.components.shared.page_header import PageHeader
 
 
 class PerformanceView(ctk.CTkFrame):

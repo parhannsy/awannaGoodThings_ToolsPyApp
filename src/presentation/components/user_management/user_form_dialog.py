@@ -6,19 +6,17 @@ Mentor hanya mengisi Email, Password, dan Role. Sesuai arsitektur REST API.
 
 import threading
 import customtkinter as ctk
-import requests
-from infrastructure.persistence.user_repository import UserRepository
-from infrastructure.config.firebase_config import FirebaseConfig
 from presentation.components.shared.toast import Toast
 
 
 class UserFormDialog(ctk.CTkToplevel):
-    def __init__(self, master, user_data=None, on_success_callback=None):
+    def __init__(self, master, user_data=None, account_service=None, user_service=None, on_success_callback=None):
         super().__init__(master)
         
         self.user_data = user_data  # Jika ada data = EDIT, Jika None = TAMBAH
+        self.account_service = account_service
+        self.user_service = user_service
         self.on_success = on_success_callback
-        self.user_repo = UserRepository()
         
         # Setup Window
         self.title("Form Karyawan" if not user_data else "Edit Karyawan")
@@ -135,34 +133,23 @@ class UserFormDialog(ctk.CTkToplevel):
             threading.Thread(target=self._update_worker, args=(role,), daemon=True).start()
 
     def _create_worker(self, email, password, role):
-        """Worker untuk mendaftarkan akun via Firebase Authentication REST API."""
-        sign_up_url = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FirebaseConfig.API_KEY}"
-        payload = {"email": email, "password": password, "returnSecureToken": True}
-        
+        """Worker untuk mendaftarkan akun melalui service aplikasi."""
+        profile_payload = {
+            "email": email,
+            "nama": "",
+            "panggilan": "",
+            "role": role,
+            "isActive": True,
+            "isProfileComplete": False
+        }
+
         try:
-            res = requests.post(sign_up_url, json=payload, timeout=10)
-            if res.status_code != 200:
-                raise ValueError(res.json().get("error", {}).get("message", "Gagal mendaftarkan Auth."))
-                
-            id_user = res.json().get("localId")
-            
-            # Buat kerangka node kosong di Firestore. isProfileComplete diset FALSE.
-            profile_payload = {
-                "idUser": id_user,
-                "email": email,
-                "nama": "",
-                "panggilan": "",
-                "role": role,
-                "isActive": True,
-                "isProfileComplete": False  # Interupsi memaksa karyawan mengisi data sendiri nanti
-            }
-            
-            db_success = self.user_repo.update_user_profile(id_user, profile_payload)
-            if not db_success:
-                raise ValueError("Kredensial Auth terbuat, namun gagal menginisialisasi database.")
-                
+            if not self.account_service:
+                raise RuntimeError("Account service belum disuntikkan ke UserFormDialog.")
+
+            self.account_service.create_user_account(email, password, profile_payload)
             self.after(0, self._finalize_success)
-            
+
         except Exception as e:
             self.after(0, lambda: self.btn_save.configure(state="normal", text="Simpan Akun"))
             self.after(0, lambda: Toast.error(master=self, message=str(e)))
@@ -172,7 +159,11 @@ class UserFormDialog(ctk.CTkToplevel):
         # Menyesuaikan mapping key data dari Firestore REST API (idUser / UID)
         id_user = self.user_data.get("idUser") or self.user_data.get("uid")
         
-        success = self.user_repo.update_user_profile(id_user, {"role": role})
+        if not self.user_service:
+            self.after(0, lambda: Toast.error(master=self, message="User service belum disuntikkan ke UserFormDialog."))
+            return
+
+        success = self.user_service.update_user_profile(id_user, {"role": role})
         if success:
             self.after(0, self._finalize_success)
         else:

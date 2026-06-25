@@ -14,9 +14,11 @@ class Toast(ctk.CTkToplevel):
 
     SUCCESS_ICON = "✓"
     ERROR_ICON = "✕"
+    INFO_ICON = "ℹ"
 
     SUCCESS_TITLE = "Berhasil"
     ERROR_TITLE = "Gagal"
+    INFO_TITLE = "Informasi"
 
     def __init__(
         self,
@@ -187,5 +189,20 @@ class Toast(ctk.CTkToplevel):
             title=cls.ERROR_TITLE,
             message=message,
             icon=cls.ERROR_ICON,
+            duration=duration
+        )
+
+    @classmethod
+    def info(
+        cls,
+        master,
+        message,
+        duration=3500
+    ):
+        return cls(
+            master=master,
+            title=cls.INFO_TITLE,
+            message=message,
+            icon=cls.INFO_ICON,
             duration=duration
         )

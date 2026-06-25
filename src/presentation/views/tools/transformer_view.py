@@ -8,10 +8,10 @@ import customtkinter as ctk
 from tkinter import filedialog
 from tkinter import messagebox
 
-from src.presentation.components.shared.page_header import PageHeader
-from src.presentation.components.shared.toast import Toast
+from presentation.components.shared.page_header import PageHeader
+from presentation.components.shared.toast import Toast
 
-from src.presentation.components.dataTransformer import (
+from presentation.components.dataTransformer import (
     FileInput,
     PlatformSelector,
     ProcessButton
@@ -19,8 +19,8 @@ from src.presentation.components.dataTransformer import (
 
 # CATATAN MENTOR: Path import ini sebaiknya dipindah dari presentation ke domain/infrastructure.
 # Untuk saat ini disesuaikan dengan struktur komponen yang kamu miliki agar tidak breaking.
-from src.presentation.components.dataTransformer.data_processor_spx import DataProcessorSPX
-from src.presentation.components.dataTransformer.data_processor_flik import DataProcessorFLIK
+from presentation.components.dataTransformer.data_processor_spx import DataProcessorSPX
+from presentation.components.dataTransformer.data_processor_flik import DataProcessorFLIK
 
 
 class TransformerView(ctk.CTkFrame):

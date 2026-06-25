@@ -5,18 +5,23 @@ Halaman dashboard utama aplikasi dengan komponen modular.
 
 import customtkinter as ctk
 
-from src.presentation.components.shared.page_header import PageHeader
+from presentation.components.shared.page_header import PageHeader
 from presentation.components.file_uploader import FileUploader
-from infrastructure.config.app_config import AppConfig
 
 
 class DashboardView(ctk.CTkFrame):
     """View orchestrator untuk Dashboard utama."""
 
-    def __init__(self, master, **kwargs):
+    def __init__(self, master, app_config=None, **kwargs):
         super().__init__(master, **kwargs)
-        self.config = AppConfig()
+        self.config = app_config
+        self._ensure_config()
         self._setup_ui()
+
+    def _ensure_config(self):
+        if self.config is None or not hasattr(self.config, 'APP_NAME'):
+            from infrastructure.config.app_config import AppConfig
+            self.config = AppConfig()
 
     def _setup_ui(self):
         self.configure(fg_color="transparent")

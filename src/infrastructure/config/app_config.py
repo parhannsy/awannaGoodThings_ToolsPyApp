@@ -57,3 +57,7 @@ class AppConfig:
             print(f"[CONFIG] Email '{email}' berhasil disimpan lokal untuk login berikutnya.")
         except Exception as e:
             print(f"[CONFIG ERROR] Gagal menyimpan email terakhir: {e}")
+
+    def set_last_login_email(self, email: str):
+        """Alias method untuk backward compatibility."""
+        return self.save_last_login_email(email)

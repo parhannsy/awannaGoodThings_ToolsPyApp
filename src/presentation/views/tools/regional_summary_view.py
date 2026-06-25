@@ -10,16 +10,16 @@ from pathlib import Path
 from datetime import datetime
 
 # Import komponen Shared
-from src.presentation.components.shared.page_header import PageHeader
-from src.presentation.components.shared.input_section import InputSection
-from src.presentation.components.shared.info_section import InfoSection
-from src.presentation.components.shared.nav_section import NavSection
-from src.presentation.components.shared.tables_container import TablesContainer
-from src.presentation.components.shared.scroll_manager import ScrollManager
+from presentation.components.shared.page_header import PageHeader
+from presentation.components.shared.input_section import InputSection
+from presentation.components.shared.info_section import InfoSection
+from presentation.components.shared.nav_section import NavSection
+from presentation.components.shared.tables_container import TablesContainer
+from presentation.components.shared.scroll_manager import ScrollManager
 
 # Import spesifik dari regional_summary
-from src.presentation.components.regional_summary.excel_exporter import ExcelExporter
-from src.presentation.components.regional_summary.data_processor import RegionalDataProcessor
+from presentation.components.regional_summary.excel_exporter import ExcelExporter
+from presentation.components.regional_summary.data_processor import RegionalDataProcessor
 
 
 MASTER_PROVINCES = [

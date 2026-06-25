@@ -10,7 +10,7 @@ from pathlib import Path
 import pandas as pd
 
 # Kita hanya mengimport komponen dasar yang pasti dipakai semua halaman
-from src.presentation.components.shared import InputSection, InfoSection
+from presentation.components.shared import InputSection, InfoSection
 
 class BasePageView(ctk.CTkFrame):
     PAGE_TITLE = "Page Title"
@@ -79,7 +79,7 @@ class BasePageView(ctk.CTkFrame):
 
         # 🌟 LAZY IMPORT: Komponen Excel hanya di-import secara dinamis saat halaman berbasis Excel dibuka.
         # Ini mencegah kegagalan program akibat error 'TablesContainer' di shared components.
-        from src.presentation.components.shared import NavSection, TablesContainer, ScrollManager
+        from presentation.components.shared import NavSection, TablesContainer, ScrollManager
 
         self.info_section = InfoSection(self.output_card)
 
@@ -102,7 +102,7 @@ class BasePageView(ctk.CTkFrame):
 
     def _setup_save_button(self):
         # 🌟 LAZY IMPORT untuk Exporter Excel
-        from src.presentation.components.shared import ExcelExporter
+        from presentation.components.shared import ExcelExporter
         self.exporter = ExcelExporter(self._get_export_data)
         ctk.CTkButton(
             self.output_card,

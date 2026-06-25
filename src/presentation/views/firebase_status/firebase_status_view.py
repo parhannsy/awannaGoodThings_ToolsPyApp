@@ -6,9 +6,7 @@ Memanfaatkan adaptasi fleksibilitas baru dari BasePageView.
 
 import threading
 import customtkinter as ctk
-import requests
-from src.presentation.views.base.base_page_view import BasePageView
-from src.infrastructure.config.firebase_config import FirebaseConfig
+from presentation.views.base.base_page_view import BasePageView
 
 class FirebaseStatusView(BasePageView):
     PAGE_TITLE = "Firebase Connectivity Status"
@@ -18,7 +16,8 @@ class FirebaseStatusView(BasePageView):
     REQUIRES_EXCEL_INPUT = False
     HAS_EXCEL_EXPORT = False
 
-    def __init__(self, master, **kwargs):
+    def __init__(self, master, firebase_status_service, **kwargs):
+        self.firebase_status_service = firebase_status_service
         super().__init__(master, **kwargs)
         self.check_connection()
 
@@ -61,32 +60,10 @@ class FirebaseStatusView(BasePageView):
         threading.Thread(target=self._network_worker, daemon=True).start()
 
     def _network_worker(self):
-        project_id = FirebaseConfig.PROJECT_ID
-        api_key = FirebaseConfig.API_KEY
-        
-        self._write_to_log(f"[INFO] Mencoba ping ke Project ID: {project_id}\n")
-        
-        if not project_id or not api_key:
-            self._update_ui_status(False, "[ERROR] Konfigurasi buntu. File .env tidak ditemukan.\n")
-            return
-
-        # 🌟 PERBAIKAN: Mengubah nama koleksi dari '__connection_test__' menjadi 'connection_test'
-        # Nama ini aman dari aturan reserved word milik Google Firestore
-        test_url = f"https://firestore.googleapis.com/v1/projects/{project_id}/databases/(default)/documents/connection_test"
-        
-        try:
-            params = {"key": api_key}
-            response = requests.get(test_url, params=params, timeout=7)
-            log_detail = f"[HTTP STATUS] {response.status_code}\n[RESPONSE]\n{response.text}\n"
-            
-            # HTTP 200 (jika koleksi ada data) atau 404 (jika koleksi masih kosong) 
-            # Keduanya valid membuktikan autentikasi API Key berhasil menembus server Google.
-            if response.status_code in [200, 404]:
-                self._update_ui_status(True, log_detail + "[SUKSES] Terhubung ke Firebase Cloud.\n")
-            else:
-                self._update_ui_status(False, log_detail + "[GAGAL] Server menolak autentikasi.\n")
-        except Exception as e:
-            self._update_ui_status(False, f"[NET ERROR] Kesalahan: {str(e)}\n")
+        self._write_to_log("=== MEMULAI DIAGNOSIS KONEKSI FIREBASE ===\n")
+        success, message = self.firebase_status_service.check_connection()
+        status_text = "[SUKSES] Terhubung ke Firebase Cloud.\n" if success else "[GAGAL] Koneksi terputus atau error.\n"
+        self._update_ui_status(success, f"{message}\n{status_text}")
 
     def _write_to_log(self, text: str):
         self.log_terminal.configure(state="normal")

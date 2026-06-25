@@ -29,6 +29,7 @@ class SalesDataApp:
         self.root.title(f"{self.config.APP_NAME} v{self.config.APP_VERSION}")
         self.root.geometry(f"{self.config.APP_WIDTH}x{self.config.APP_HEIGHT}")
         self.root.minsize(900, 600)
+        self.root.after(0, self._maximize_window)
         
         self._setup_layout()
         self._setup_sidebar()
@@ -38,6 +39,14 @@ class SalesDataApp:
     def _setup_layout(self):
         self.root.grid_columnconfigure(1, weight=1)
         self.root.grid_rowconfigure(0, weight=1)
+
+    def _maximize_window(self):
+        """Maximalkan jendela aplikasi setelah root dibuat."""
+        try:
+            self.root.state("zoomed")
+            self.root.attributes("-zoomed", True)
+        except Exception as e:
+            print(f"[WINDOW] Gagal memaksimalkan jendela: {e}")
     
     def _setup_sidebar(self):
         self.sidebar = Sidebar(
@@ -77,3 +86,4 @@ class SalesDataApp:
     
     def run(self):
         self.root.mainloop()
+        self.root.state("zoomed") 

@@ -5,11 +5,10 @@ Dynamic Role-Based Access Control (RBAC). Objek halaman hanya dibuat saat diakse
 """
 
 import customtkinter as ctk
-from pathlib import Path
 
-from infrastructure.config.app_config import AppConfig
 from infrastructure.config.role_config import get_allowed_menu_for_role, ROLE_ACCESS_MATRIX
 from presentation.components.side_bar import Sidebar
+from presentation.dependency_container import create_presentation_services
 from presentation.views.dashboard_view import DashboardView
 from presentation.views.keuangan.index import KeuanganIndexView
 from presentation.views.produk.index import ProdukIndexView
@@ -27,10 +26,10 @@ from presentation.components.shared.toast import Toast
 class SalesDataApp:
     """Main application window with Dynamic RBAC routing and Lazy View Initialization."""
     
-    def __init__(self):
-        self.config = AppConfig()
+    def __init__(self, app_config=None, services=None):
+        self.config = app_config or self._build_default_config()
         self.config.ensure_directories()
-        
+
         ctk.set_appearance_mode(self.config.THEME)
         ctk.set_default_color_theme(self.config.COLOR_THEME)
         
@@ -38,17 +37,33 @@ class SalesDataApp:
         self.root.title(f"{self.config.APP_NAME} v{self.config.APP_VERSION}")
         self.root.geometry(f"{self.config.APP_WIDTH}x{self.config.APP_HEIGHT}")
         self.root.minsize(900, 600)
-        
+        self.root.after(0, self._maximize_window)
+
+        self.services = services or create_presentation_services()
         self.session_user = None
         self._show_login_screen()
+
+    def _build_default_config(self):
+        from infrastructure.config.app_config import AppConfig
+        return AppConfig()
     
     def _show_login_screen(self):
         """Membuat dan menampilkan panel login memenuhi jendela utama."""
         self.login_page = LoginView(
-            master=self.root, 
+            master=self.root,
+            account_service=self.services["account_service"],
+            app_config=self.config,
             on_login_success_callback=self._handle_login_success
         )
         self.login_page.pack(fill="both", expand=True)
+
+    def _maximize_window(self):
+        """Maximalkan jendela aplikasi setelah root dibuat."""
+        try:
+            self.root.state("zoomed")
+            self.root.attributes("-zoomed", True)
+        except Exception as e:
+            print(f"[WINDOW] Gagal memaksimalkan jendela: {e}")
 
     def _handle_login_success(self, user_profile: dict):
         """Callback otomatis saat login sukses. Mendukung interupsi CompleteProfileView."""
@@ -64,15 +79,22 @@ class SalesDataApp:
         is_complete = user_profile.get("isProfileComplete", False)
         if str(is_complete).lower() == 'true':
             is_complete = True
-            
-        if not is_complete:
-            print(f"[PROFILE INCOMPLETE] Mengalihkan {user_profile.get('email')} ke halaman pengisian profil.")
-            
+
+        if self._needs_profile_completion(user_profile):
+            profile_name = str(user_profile.get("nama", "")).strip()
+            print(f"[PROFILE INCOMPLETE] Mengalihkan {user_profile.get('email')} ke halaman pengisian profil. isProfileComplete={is_complete}, nama='{profile_name}'")
+
+            Toast.info(
+                master=self.root,
+                message="Profil Anda belum lengkap. Silakan lengkapi data tambahan sebelum masuk ke dashboard."
+            )
+
             from presentation.views.login.complete_profile import CompleteProfileView
-            
+
             self.complete_profile_page = CompleteProfileView(
                 master=self.root,
                 session_user=self.session_user,
+                user_service=self.services["user_service"],
                 on_completion_success=self._handle_profile_completion_finish
             )
             self.complete_profile_page.pack(fill="both", expand=True)
@@ -82,7 +104,7 @@ class SalesDataApp:
         self._build_main_workspace()
 
     def _handle_profile_completion_finish(self, completed_user_profile: dict):
-        """Dipanggil setelah pengguna sukses mengisi nama di CompleteProfileView."""
+        """Dipanggil setelah pengguna sukses menyelesaikan seluruh proses profil lengkap."""
         self.session_user = completed_user_profile
         
         # Bersihkan halaman interupsi dari window utama
@@ -92,6 +114,17 @@ class SalesDataApp:
         print(f"[PROFILE COMPLETED] Profil berhasil diperbarui untuk: {self.session_user.get('nama')}")
         
         self._build_main_workspace()
+
+    def _needs_profile_completion(self, user_profile: dict) -> bool:
+        required_fields = [
+            "nama",
+            "panggilan",
+            "alamat",
+            "nohp",
+            "bank",
+            "nomor_rekening",
+        ]
+        return any(not str(user_profile.get(field, "")).strip() for field in required_fields)
 
     def _build_main_workspace(self):
         """Helper internal untuk membangun infrastruktur layout, sidebar, dan views."""
@@ -157,16 +190,16 @@ class SalesDataApp:
         self.allowed_ids = ROLE_ACCESS_MATRIX.get(user_role, ["dashboard"])
         
         self.view_blueprints = {
-            "dashboard": lambda master: DashboardView(master),
+            "dashboard": lambda master: DashboardView(master, app_config=self.config),
             "regional_summary": lambda master: RegionalSummaryView(master),
             "rate_zonasi": lambda master: RateZonasiView(master),
             "transformer": lambda master: TransformerView(master),
             "performance": lambda master: PerformanceView(master),
             "history": lambda master: HistoryView(master),
-            "firebase_status": lambda master: FirebaseStatusView(master),
+            "firebase_status": lambda master: FirebaseStatusView(master, firebase_status_service=self.services["firebase_status_service"]),
             "produk_index": lambda master: ProdukIndexView(master),
             "keuangan_index": lambda master: KeuanganIndexView(master),
-            "user_management_index": lambda master: UserManagementIndexView(master)
+            "user_management_index": lambda master: UserManagementIndexView(master, user_service=self.services["user_service"], account_service=self.services["account_service"])
         }
     
     def show_view(self, view_name: str):

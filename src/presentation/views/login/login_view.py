@@ -6,35 +6,23 @@ Terintegrasi langsung dengan FirebaseAuthRepository REST API dan kebijakan Soft 
 
 import threading
 import customtkinter as ctk
-from infrastructure.persistence.firebase_auth_impl import FirebaseAuthRepository
-from infrastructure.config.app_config import AppConfig
 
 
 class LoginView(ctk.CTkFrame):
-    def __init__(self, master, on_login_success_callback, **kwargs):
-        # Inisialisasi sebagai Frame, sewarna dengan background utama dashboard
+    def __init__(self, master, account_service, app_config=None, on_login_success_callback=None, **kwargs):
         super().__init__(master, fg_color="#111827", corner_radius=0, **kwargs)
-        
+
         self.on_login_success = on_login_success_callback
-        self.auth_repo = FirebaseAuthRepository()
-        
-        # PERBAIKAN DEFENSIF: Validasi ketat tipe data master.config (Atasi AttributeError 'function')
-        self.app_config = None
-        if hasattr(master, 'config'):
-            if callable(master.config):
-                try:
-                    self.app_config = master.config()
-                except Exception:
-                    self.app_config = AppConfig()
-            else:
-                self.app_config = master.config
-        
-        # Fallback terakhir jika tetap gagal mendapatkan objek valid
-        if not self.app_config or isinstance(self.app_config, type) or not hasattr(self.app_config, 'get_last_login_email'):
-            self.app_config = AppConfig()
-            self.app_config.ensure_directories()
-            
+        self.account_service = account_service
+        self.app_config = app_config
+        self._ensure_config()
         self._setup_ui()
+
+    def _ensure_config(self):
+        if self.app_config is None or not hasattr(self.app_config, 'get_last_login_email'):
+            raise RuntimeError("LoginView requires a valid app_config instance.")
+        if hasattr(self.app_config, 'ensure_directories'):
+            self.app_config.ensure_directories()
 
     def _setup_ui(self):
         # Central Login Card tetap diletakkan di tengah menggunakan place
@@ -110,10 +98,10 @@ class LoginView(ctk.CTkFrame):
         """
         from presentation.components.shared.toast import Toast
         try:
-            # 1. Panggil fungsi repositori asli milikmu
-            user_profile = self.auth_repo.login_user(email, password)
+            # 1. Panggil fungsi service akun yang sudah dibungkus dari infrastruktur
+            user_profile = self.account_service.login_user(email, password)
             
-            # Jika kredensial salah atau network bermasalah, repositori mengembalikan None
+            # Jika kredensial salah atau network bermasalah, service mengembalikan None
             if not user_profile:
                 raise ValueError("Email atau Password salah, atau gagal terhubung ke server.")
             
@@ -129,9 +117,17 @@ class LoginView(ctk.CTkFrame):
                 ))
                 return
 
+            # Pastikan minimal data profile tersedia untuk alur complete profile
+            user_profile.setdefault("idUser", "")
+            user_profile.setdefault("isProfileComplete", False)
+            user_profile.setdefault("nama", "")
+
             # 3. Cache email jika sukses dan alirkan data user ke Main App
             try:
-                self.app_config.set_last_login_email(email)
+                if hasattr(self.app_config, 'save_last_login_email'):
+                    self.app_config.save_last_login_email(email)
+                elif hasattr(self.app_config, 'set_last_login_email'):
+                    self.app_config.set_last_login_email(email)
             except Exception:
                 pass
                 

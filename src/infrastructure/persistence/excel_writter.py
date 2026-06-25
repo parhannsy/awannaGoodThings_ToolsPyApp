@@ -10,9 +10,10 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils.dataframe import dataframe_to_rows
 
 from domain.entities.sales_summary import RegionalSummary
+from application.ports.excel_writer_port import ExcelWriterPort
 
 
-class ExcelWriter:
+class ExcelWriter(ExcelWriterPort):
     """Write data to Excel with professional formatting."""
     
     def __init__(self):

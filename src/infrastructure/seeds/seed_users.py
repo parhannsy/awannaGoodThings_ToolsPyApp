@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 # Menambahkan root directory proyek ke sys.path agar module src bisa terbaca
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
-from src.infrastructure.config.firebase_config import FirebaseConfig
+from infrastructure.config.firebase_config import FirebaseConfig
 
 # Memuat konfigurasi variabel lingkungan (.env)
 load_dotenv()
