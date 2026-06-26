@@ -145,3 +145,16 @@ class FirebaseAuthRepository(AuthRepository):
             error_message = str(e)
             print(f"[Auth SignUp Error] Gagal mendaftar: {error_message}")
             raise ValueError(error_message)
+
+    def send_password_reset(self, email: str) -> bool:
+        reset_url = f"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={FirebaseConfig.API_KEY}"
+        payload = {"requestType": "PASSWORD_RESET", "email": email}
+        try:
+            response = requests.post(reset_url, json=payload, timeout=10)
+            if response.status_code == 200:
+                return True
+            print(f"[Auth Reset Error] {response.status_code} - {response.text}")
+            return False
+        except Exception as e:
+            print(f"[Auth Reset Error] Gagal kirim reset: {e}")
+            return False

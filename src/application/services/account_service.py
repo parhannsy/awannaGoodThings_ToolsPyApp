@@ -44,3 +44,6 @@ class AccountService:
 
     def stream_users_data(self, callback_function) -> Optional[Any]:
         return self._user_repository.stream_users_data(callback_function)
+
+    def send_password_reset(self, email: str) -> bool:
+        return self._auth_repository.send_password_reset(email)

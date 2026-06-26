@@ -9,13 +9,13 @@ from presentation.components.shared.toast import Toast
 
 
 class TeamFormDialog(ctk.CTkToplevel):
-    def __init__(self, master, user_service=None, on_success_callback=None):
+    def __init__(self, master, user_service=None, existing_team=None, on_success_callback=None):
         super().__init__(master)
 
         self.user_service = user_service
+        self.existing_team = existing_team
         self.on_success = on_success_callback
-
-        self.title("Form Tambah Tim")
+        self.title("Form Tambah Tim" if not existing_team else "Edit Data Tim")
         self.geometry("420x520")
         self.resizable(False, False)
         self.configure(fg_color="#1F2937")
@@ -25,6 +25,9 @@ class TeamFormDialog(ctk.CTkToplevel):
         self.grab_set()
 
         self._setup_ui()
+
+        if self.existing_team:
+            self._load_existing_team()
 
     def _setup_ui(self):
         main_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -122,8 +125,49 @@ class TeamFormDialog(ctk.CTkToplevel):
             Toast.error(master=self, message="Semua field wajib diisi sebelum menyimpan.")
             return
 
+        # Jika mode EDIT, jalankan update worker
+        if self.existing_team:
+            self.btn_save.configure(state="disabled", text="Memperbarui...")
+            threading.Thread(target=self._update_team_worker, args=(nama, panggilan, alamat, nohp, role_tim), daemon=True).start()
+            return
+
         self.btn_save.configure(state="disabled", text="Menyimpan...")
         threading.Thread(target=self._create_team_worker, args=(nama, panggilan, alamat, nohp, role_tim), daemon=True).start()
+
+    def _load_existing_team(self):
+        # Muat nilai existing_team ke field input
+        t = self.existing_team
+        self.entry_nama.insert(0, t.get('nama', ''))
+        self.entry_panggilan.insert(0, t.get('panggilan', ''))
+        self.entry_alamat.insert(0, t.get('alamat', ''))
+        self.entry_nohp.insert(0, t.get('nohp', ''))
+        role_val = t.get('role_tim', 'gudang')
+        self.combo_role_tim.set(role_val)
+
+    def _update_team_worker(self, nama, panggilan, alamat, nohp, role_tim):
+        if not self.user_service:
+            self.after(0, lambda: Toast.error(master=self, message="User service belum disuntikkan ke TeamFormDialog."))
+            return
+
+        team_id = None
+        if self.existing_team:
+            team_id = self.existing_team.get('idTeam') or self.existing_team.get('id')
+
+        payload = {
+            "nama": nama,
+            "panggilan": panggilan,
+            "alamat": alamat,
+            "nohp": nohp,
+            "role_tim": role_tim,
+            "isActive": True,
+        }
+
+        success = self.user_service.update_team_profile(team_id, payload)
+        if success:
+            self.after(0, self._finalize_success)
+        else:
+            self.after(0, lambda: self.btn_save.configure(state="normal", text="Simpan Tim"))
+            self.after(0, lambda: Toast.error(master=self, message="Gagal memperbarui data tim."))
 
     def _create_team_worker(self, nama, panggilan, alamat, nohp, role_tim):
         if not self.user_service:

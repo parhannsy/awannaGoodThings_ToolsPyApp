@@ -19,3 +19,8 @@ class AuthRepository(ABC):
     def sign_up(self, email: str, password: str) -> Optional[str]:
         """Buat akun baru dan kembalikan id_user yang dibuat."""
         pass
+
+    @abstractmethod
+    def send_password_reset(self, email: str) -> bool:
+        """Kirim email reset password via provider (Firebase REST)."""
+        pass

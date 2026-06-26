@@ -176,6 +176,55 @@ class UserRepository(UserRepositoryPort):
             print(f"[USER REPO CRITICAL ERROR] Gagal sinkronisasi ke Firebase REST: {e}")
             return False
 
+    def update_team_profile(self, team_id: str, profile_data: dict) -> bool:
+        """Perbarui dokumen tim di koleksi 'teams' menggunakan Patch dengan updateMask."""
+        try:
+            if not team_id:
+                print("[USER REPO ERROR] team_id kosong.")
+                return False
+
+            teams_url = FirebaseConfig.get_firestore_url('teams')
+            doc_url = f"{teams_url}/{team_id}"
+
+            firestore_fields = {}
+            update_masks = []
+            for key, value in profile_data.items():
+                update_masks.append(f"updateMask.fieldPaths={key}")
+                if isinstance(value, bool):
+                    firestore_fields[key] = {"booleanValue": value}
+                elif isinstance(value, (int, float)):
+                    firestore_fields[key] = {"integerValue" if isinstance(value, int) else "doubleValue": value}
+                else:
+                    firestore_fields[key] = {"stringValue": str(value)}
+
+            payload = {"fields": firestore_fields}
+            mask_query = "&".join(update_masks)
+            final_url = f"{doc_url}?key={FirebaseConfig.API_KEY}&{mask_query}"
+
+            print(f"[USER REPO] Patching team data ke Firestore REST API: {final_url}")
+            response = requests.patch(final_url, json=payload, timeout=10)
+
+            if response.status_code == 200:
+                print(f"[USER REPO] Berhasil sinkronisasi team id: {team_id}")
+                return True
+
+            if response.status_code == 404:
+                print(f"[USER REPO] Dokumen team tidak ditemukan, mencoba membuat baru: {team_id}")
+                create_url = f"{FirebaseConfig.get_firestore_url('teams')}?key={FirebaseConfig.API_KEY}&documentId={team_id}"
+                create_response = requests.post(create_url, json=payload, timeout=10)
+                if create_response.status_code in [200, 201]:
+                    print(f"[USER REPO] Berhasil membuat team baru id: {team_id}")
+                    return True
+                print(f"[USER REPO ERROR] Gagal membuat dokumen team baru: {create_response.text}")
+                return False
+
+            print(f"[USER REPO ERROR] Gagal patch team dokumen: {response.status_code} - {response.text}")
+            return False
+
+        except Exception as e:
+            print(f"[USER REPO CRITICAL ERROR] Gagal sinkronisasi team ke Firebase REST: {e}")
+            return False
+
     def stream_users_data(self, callback_function) -> Optional[Any]:
         """
         [REST API LIMITATION]

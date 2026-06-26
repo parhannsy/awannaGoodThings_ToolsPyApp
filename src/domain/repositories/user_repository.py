@@ -31,5 +31,9 @@ class UserRepositoryPort(ABC):
         pass
 
     @abstractmethod
+    def update_team_profile(self, team_id: str, profile_data: Dict[str, Any]) -> bool:
+        pass
+
+    @abstractmethod
     def stream_teams_data(self, callback_function) -> Optional[Any]:
         pass

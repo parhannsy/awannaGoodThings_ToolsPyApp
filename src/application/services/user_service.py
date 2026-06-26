@@ -23,6 +23,9 @@ class UserService:
     def create_team_profile(self, team_data: Dict[str, Any]) -> bool:
         return self._user_repository.create_team_profile(team_data)
 
+    def update_team_profile(self, team_id: str, profile_data: Dict[str, Any]) -> bool:
+        return self._user_repository.update_team_profile(team_id, profile_data)
+
     def stream_users_data(self, callback_function) -> Optional[Any]:
         return self._user_repository.stream_users_data(callback_function)
 
